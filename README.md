@@ -1,6 +1,6 @@
 # Control de asistencia biométrico escolar
 
-[![CI](https://github.com/mchiroyl/presencia-biometric-attendance/actions/workflows/ci.yml/badge.svg)](https://github.com/mchiroyl/presencia-biometric-attendance/actions/workflows/ci.yml)
+[![CI](https://github.com/Ecuyuch/presencia_biometric_attendance/actions/workflows/ci.yml/badge.svg)](https://github.com/Ecuyuch/presencia_biometric_attendance/actions/workflows/ci.yml)
 
 ## Integración continua
 
@@ -14,10 +14,12 @@ Estado actualizado: 10 de octubre de 2026. La instalación actual ejecuta SQL Se
 
 ## Arranque en esta computadora
 
+**Con doble clic:** ejecute `iniciar-presencia.bat` desde la carpeta del proyecto. Inicia Docker y los servicios, reconecta el lector preparado y abre la pagina usando `WEB_PORT` de `.env` (4173 en esta computadora). No recompila las imagenes. Para comprobarlo sin abrir navegador: `iniciar-presencia.bat --sin-abrir`. La primera instalacion y autorizacion del lector se describen mas abajo. El lanzador espera hasta 120 segundos a que API, SQL y pagina esten disponibles, incluso si Windows ya inicio otro supervisor. El lector se conecta en segundo plano y muestra su estado en la pagina. Si se agota el tiempo, se registra el diagnostico en `docs/evidence/reader-autostart.log`. Para probar la espera sin arrancar Docker ni tocar datos: `powershell -NoProfile -File scripts/test-startup-wait.ps1`.
+
 Mantenga Docker Desktop abierto. En PowerShell ejecute, en este orden:
 
 ~~~powershell
-Set-Location -LiteralPath 'D:\UMG\SEMINARIO DE TECNOLGIAS\proyecto_eddy\Sistema de Control de Asistencia Biométrico Escolar'
+Set-Location -LiteralPath "$env:USERPROFILE\presencia"
 powershell -ExecutionPolicy Bypass -File '.\scripts\start-docker.ps1' -Usb
 ~~~
 
@@ -67,7 +69,7 @@ En una terminal normal, clone en su carpeta de usuario y entre al proyecto:
 
 ~~~powershell
 Set-Location -LiteralPath $env:USERPROFILE
-git clone "https://github.com/mchiroyl/presencia-biometric-attendance.git" presencia
+git clone "https://github.com/Ecuyuch/presencia_biometric_attendance.git" presencia
 Set-Location -LiteralPath '.\presencia'
 npm ci
 npm run setup
@@ -109,6 +111,10 @@ El comando construye las imágenes, prepara USB/IP y permisos antes del montaje,
 
 Abra [http://localhost:5173](http://localhost:5173). Abra el .env raíz con su editor local para consultar BOOTSTRAP_ADMIN_EMAIL y BOOTSTRAP_ADMIN_PASSWORD. No los publique en capturas. Tras cambiar la contraseña desde Administración use la nueva: editar bootstrap no cambia cuentas ya almacenadas en SQL.
 
+En Configuración > Mi cuenta, complete su nombre: se imprime como Generado por en cada página del PDF. Las cuentas existentes conservan sus credenciales y no reciben un nombre inventado. Desde Crear cuenta, un administrador puede registrar otra cuenta con nombre, correo, contraseña y rol; seleccione Administrador para conceder acceso completo. El registro público sigue pendiente de aprobación y no permite elegir privilegios.
+
+En Configuración > Roles y permisos, cree roles personalizados y marque los apartados/acciones permitidos: empleados, huellas, asistencias y ajustes. En Asignar roles seleccione la cuenta y guarde. Solo el rol fijo Administrador puede crear cuentas, gestionar roles o asignarlos; no puede cambiar su propio rol ni dejar la instalación sin administrador. Cambiar permisos o el rol de una cuenta termina sus sesiones y revoca sus tickets de registro de huellas. La cuenta debe ingresar nuevamente.
+
 Resultado esperado: web, API, SQL y puente Healthy; db-init Exited es normal porque finalizó la inicialización. Para captura, además debe mostrarse Lector conectado y disponible. Healthy por sí solo no acredita lector ni captura.
 
 ### 5. Arranques posteriores con un solo comando
@@ -144,12 +150,13 @@ La causa del montaje y el cambio de unidad se detallan en [Hardware: errores res
 - Consentimiento textual, enrolamiento con ticket administrativo y confirmación persistente de éxito o error. No se almacenan imágenes dactilares.
 - Horario por empleado: entrada 06:45 y salida 12:45 o 13:00. Semáforo con motivo y minutos; sin horario aplicado, evaluación neutral.
 - Historial agrupado por fecha escolar dentro de cada página, filtro de fecha y exportación de la página.
-- Marcajes IN/OUT alternados, firma del dispositivo, protección contra repetición y conservación del historial.
+- Entrada antes de la hora de salida y salida desde esa hora según el turno: una de cada una por empleado/día, con firma del dispositivo, reintentos idempotentes e historial conservado.
 - Disponibilidad USB real y reconexión a WSL sin imponer un puerto físico. No se aplican sanciones automáticas.
 
 ## Documentación
 
 - [Manual de usuario](docs/MANUAL_USUARIO.md)
+- [Login inicial, lector automático y reporte PDF](docs/LOGIN_LECTOR_PDF.md)
 - [Manual técnico](docs/MANUAL_TECNICO.md)
 - [Preparación y diagnóstico hardware](docs/HARDWARE.md)
 - [Docker/Linux](docs/DOCKER_LINUX.md)
